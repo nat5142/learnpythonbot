@@ -1,17 +1,17 @@
 ################################################################################
-# learnpythonbot.py | Created 2018/01/26									   #
-#																			   #
-# Author: Nicholas Tulli (nat5142 [at] psu [dot] edu)						   #
-#																			   #
+# learnpythonbot.py | Created 2018/01/26				       #
+#									       #
+# Author: Nicholas Tulli (nat5142 [at] psu [dot] edu)			       #
+#									       #
 # This script is responsible for the content of Twitter user @learnpythonbot.  #
 # Running via an every-minute crontab, this script will use the Python-Reddit  #
 # API Wrapper (praw) to find new posts to the subreddit /r/learnpython, and    #
-# tweet the content and URL of each.										   #
-#																			   #
+# tweet the content and URL of each.					       #
+#									       #
 # In addition to tweets, the script also collects and logs information about   #
-# the posts' body and title in a MySQL database.							   #
-#																			   #
-# Developed for Python 3.6													   #
+# the posts' body and title in a MySQL database.		               #
+#									       #
+# Developed for Python 3.6						       #
 ################################################################################
 
 # ------- MODULE LIBRARY ------- #
@@ -47,17 +47,17 @@ common = [line.strip() for line in lines]
 
 # Reddit connection via praw package
 reddit = praw.Reddit(client_id=credentials['reddit']['client_id'],
-					client_secret=credentials['reddit']['client_secret'],
-					user_agent=credentials['reddit']['user_agent'],
-					username=credentials['reddit']['username'],
-					password=credentials['reddit']['password'])
+		client_secret=credentials['reddit']['client_secret'],
+		user_agent=credentials['reddit']['user_agent'],
+		username=credentials['reddit']['username'],
+		password=credentials['reddit']['password'])
 learnpython = reddit.subreddit('learnpython')
 
 # Twitter connection via Tweepy
 auth = tweepy.OAuthHandler(credentials['twitter']['learnpythonbot']['consumer_key'],
-				credentials['twitter']['learnpythonbot']['consumer_secret'])
+	credentials['twitter']['learnpythonbot']['consumer_secret'])
 auth.set_access_token(credentials['twitter']['learnpythonbot']['access_token'],
-			credentials['twitter']['learnpythonbot']['access_token_secret'])
+	credentials['twitter']['learnpythonbot']['access_token_secret'])
 api = tweepy.API(auth)
 
 
@@ -66,7 +66,7 @@ def __open():
 		Open a database connection
 	'''
 	cnx = mysql.connector.connect(user=access['user'], host=access['host'],
-				database='learnpython', password=access['password'])
+		database='learnpython', password=access['password'])
 	cursor = cnx.cursor(dictionary=True)
 
 	return cnx, cursor
@@ -82,11 +82,11 @@ def __close(connection, curs):
 
 def newPosts():
 	'''
-		PURPOSE: Search the /r/learnpython subreddit for new posts and manage
-				 flow of script
+		PURPOSE: Search the /r/learnpython subreddit for new posts and
+			 manage flow of script
 	'''
 	posts = [x for x in learnpython.new(limit=200) if x.created_utc > \
-									credentials['reddit']['globalEpoch']]
+				credentials['reddit']['globalEpoch']]
 	if posts:
 		for post in posts[::-1]:
 			timeUpdater(post.created_utc)
@@ -100,7 +100,7 @@ def newPosts():
 def postInsert(submission):
 	'''
 		PURPOSE: Insert information about new post into `posts` table
-				 of MySQL database.
+			 of MySQL database.
 	'''
 	cnx, cursor = __open()
 	insert = '''INSERT INTO posts \
@@ -113,7 +113,7 @@ def postInsert(submission):
 	else:
 		author = str(submission.author.name)
 		dictionary = {str(key):str(value) for key, value \
-						in submission.__dict__.items() if key != 'author'}
+			in submission.__dict__.items() if key != 'author'}
 		dictionary['author'] = author
 		try:
 			cursor.execute(insert, dictionary)
@@ -130,11 +130,11 @@ def postInsert(submission):
 def tagMatch(p):
 	'''
 		PURPOSE: Use regular expression to match tags in post title.
-				 Tags in the following format will be matched:
+			 Tags in the following format will be matched:
 
-				 [tag] --> match: 'tag'
-				 (tag) --> match: 'tag'
-				 [help with flask] --> match: 'help with flask'
+			 [tag] --> match: 'tag'
+			 (tag) --> match: 'tag'
+			 [help with flask] --> match: 'help with flask'
 
 		If backslashes are found in the title tag, each string split will
 		be treated as a unique tag.
@@ -315,19 +315,6 @@ def timeUpdater(utcTime):
 if __name__ == '__main__':
 	newPosts()
 
-
-
-
-# ----------------------------------- BACK BURNER ---------------------------------- #
-
-
-'''
-for tweet in tweepy.Cursor(api.user_timeline, id=credentials['twitter']['owner_ID']).items():
-	api.destroy_status(tweet._json['id'])
-'''
-
-
-# ---------------------------------------------------------------------------------- #
 
 
 
